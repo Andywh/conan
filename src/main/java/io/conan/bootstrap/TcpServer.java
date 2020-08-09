@@ -11,6 +11,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.conan.bootstrap.TcpConnection.defaultConnectionCallback;
 
@@ -47,6 +48,8 @@ public class TcpServer {
     
     private int hostPort;
 
+    private AtomicInteger started;
+
     private NewConnectionCallback newConnection = new NewConnectionCallback() {
         @Override
         public void callback(Socket socket, InetSocketAddress peerAddr) {
@@ -81,6 +84,12 @@ public class TcpServer {
         this.connectionCallback = defaultConnectionCallback;
         this.nextConnId = nextConnId;
         acceptor.setNewConnectionCallback(newConnection);
+    }
+
+    public void start() {
+        if (started.getAndSet(1) == 0) {
+            threadPool.start(threadInitCallback);
+        }
     }
 
 

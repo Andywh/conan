@@ -55,7 +55,6 @@ public class Acceptor {
     private ReadEventCallback handleRead = new ReadEventCallback() {
         @Override
         public void cb() {
-            //InetSocketAddress peerAddr = new InetSocketAddress();
             Socket client = null;
             try {
                 client = acceptSocket.accept();
