@@ -1,9 +1,10 @@
 package io.conan.bootstrap;
 
-import io.conan.callback.ConnectionCallback;
-import io.conan.callback.NewConnectionCallback;
+import io.conan.callback.*;
 import io.conan.channel.Acceptor;
 import io.conan.channel.EventLoop;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.net.InetAddress;
@@ -17,6 +18,8 @@ import static io.conan.bootstrap.TcpConnection.defaultConnectionCallback;
  * Created by Ai Lun on 2020-08-06.
  */
 @Slf4j
+@Getter
+@Setter
 public class TcpServer {
 
     // main eventloop
@@ -32,19 +35,46 @@ public class TcpServer {
 
     private ConnectionCallback connectionCallback;
 
+    private MessageCallback messageCallback;
+
+    private WriteCompleteCallback writeCompleteCallback;
+
+    private ThreadInitCallback threadInitCallback;
+
     private int nextConnId;
 
     private Socket socket;
     
-    private String hostPort;
+    private int hostPort;
+
+    private NewConnectionCallback newConnection = new NewConnectionCallback() {
+        @Override
+        public void callback(Socket socket, InetSocketAddress peerAddr) {
+
+            EventLoop ioLoop = threadPool.getNextLoop();
+            String connName = name + ": " + hostPort + "#" + nextConnId;
+            ++nextConnId;
+            log.info("TcpServer::newConnection [{}] - new connection [{}] from {}",
+                    name, connName, peerAddr.getPort());
+            InetSocketAddress localAddress = new InetSocketAddress(peerAddr.getPort());
+
+            TcpConnection conn = new TcpConnection(ioLoop, connName, socket, localAddress, peerAddr);
+            conn.setConnectionCallback(connectionCallback);
+            conn.setMessageCallback(messageCallback);
+            conn.setWriteCompleteCallback(writeCompleteCallback);
+            //conn.setCloseCallback(removeConnection(conn));
+            //ioLoop.runInLoop();
+            return;
+        }
+    };
 
     public TcpServer(EventLoop loop,
-                     InetAddress listenAddr,
+                     InetSocketAddress listenAddr,
                      String name, Acceptor acceptor,
                      EventLoopThreadPool threadPool,
                      int nextConnId) {
         this.loop = loop;
-        this.hostPort = listenAddr.getHostAddress();
+        this.hostPort = listenAddr.getPort();
         this.name = name;
         this.acceptor = acceptor;
         this.threadPool = threadPool;
@@ -53,18 +83,20 @@ public class TcpServer {
         acceptor.setNewConnectionCallback(newConnection);
     }
 
-    private NewConnectionCallback newConnection = new NewConnectionCallback() {
-        @Override
-        public void callback(int sockfd, InetSocketAddress peerAddr) {
-            EventLoop ioLoop = threadPool.getNextLoop();
-            String connName = name + ": " + hostPort + "#" + nextConnId;
-            ++nextConnId;
-            log.info("TcpServer::newConnection [{}] - new connection [{}] from {}",
-                    name, connName, peerAddr.getHostString());
-            InetSocketAddress localAddress = new ServerSocket()
 
-        }
-    }
+
+    //private CloseCallback removeConnection = new CloseCallback() {
+    //
+    //    @Override
+    //    public void callback(TcpConnection conn) {
+    //        loop.runInLoop();
+    //
+    //    }
+    //}
+
+    //private void removeConnectionInLoop() {
+    //
+    //}
 
     //private NewConnectionCallback newConnection2 = (int sockfd, InetAddress peerAddr) -> {
     //    //EventLoop ioLoop = threadPool.getNextLoop();

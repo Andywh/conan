@@ -1,18 +1,30 @@
 package io.conan.channel;
 
 
-import java.util.Comparator;
+import io.conan.callback.EventCallback;
+import io.conan.callback.ReadEventCallback;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * Created by Ai Lun on 2020-08-06.
  */
-public interface Channel extends Comparator<Channel> {
+@Getter
+@Setter
+public class Channel {
 
     //ChannelId id();
 
-    EventLoop eventLoop();
+    //EventLoop eventLoop();
+    //
+    //Channel parent();
 
-    Channel parent();
+    ReadEventCallback readCallback;
 
+    EventCallback writeCallback;
+
+    EventCallback closeCallback;
+
+    EventCallback errorCallback;
 
 }
